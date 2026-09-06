@@ -1,0 +1,36 @@
+# Owned by tfmodgen; overwritten on every publish. Edits belong in the
+# generator repository under publish/provider-repo/.
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.0"
+          terraform_wrapper: false
+      - name: fmt
+        run: terraform fmt -check -recursive modules datasources 2>/dev/null || terraform fmt -check -recursive modules
+      - name: validate every module
+        run: |
+          set -euo pipefail
+          fail=0
+          for d in modules/* datasources/*; do
+            [ -f "$d/main.tf" ] || continue
+            echo "::group::$d"
+            if ! (cd "$d" && terraform init -backend=false -input=false >/dev/null && terraform validate -no-color); then
+              fail=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $fail

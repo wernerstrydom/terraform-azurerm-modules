@@ -1,0 +1,30 @@
+# Owned by tfmodgen; overwritten on every publish.
+# When a publish PR merges, the VERSION stamp on main names the release.
+# Tags are immutable: an existing tag is never moved.
+name: release
+
+on:
+  push:
+    branches: [main]
+    paths: [VERSION]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag and release from VERSION
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=$(awk -F= '/^tfmodgen=/ {print $2}' VERSION)
+          [ -n "$tag" ] || { echo "VERSION has no tfmodgen= line"; exit 1; }
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null || gh release view "$tag" >/dev/null 2>&1; then
+            echo "release $tag already exists; tags are immutable, nothing to do"
+            exit 0
+          fi
+          gh release create "$tag" --title "$tag" --notes-file VERSION --target "$GITHUB_SHA"
