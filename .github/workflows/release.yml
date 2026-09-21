@@ -1,6 +1,8 @@
 # Owned by tfmodgen; overwritten on every publish.
-# When a publish PR merges, the VERSION stamp on main names the release.
-# Tags are immutable: an existing tag is never moved.
+# When a publish PR merges, VERSION on main names the release: its
+# `release=` line is the provider version (v4.81.0). Tags are immutable —
+# an existing tag is never moved — so a regeneration for an already
+# released provider version gets the next free -rN suffix (v4.81.0-r2).
 name: release
 
 on:
@@ -16,15 +18,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Tag and release from VERSION
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          tag=$(awk -F= '/^tfmodgen=/ {print $2}' VERSION)
-          [ -n "$tag" ] || { echo "VERSION has no tfmodgen= line"; exit 1; }
-          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null || gh release view "$tag" >/dev/null 2>&1; then
-            echo "release $tag already exists; tags are immutable, nothing to do"
+          base=$(awk -F= '/^release=/ {print $2}' VERSION)
+          [ -n "$base" ] || { echo "VERSION has no release= line"; exit 1; }
+          if git tag --points-at HEAD | grep -qx "$base\(-r[0-9]*\)\?"; then
+            echo "this commit is already released; nothing to do"
             exit 0
           fi
+          tag=$base
+          n=1
+          while git rev-parse -q --verify "refs/tags/$tag" >/dev/null; do
+            n=$((n + 1))
+            tag="$base-r$n"
+          done
           gh release create "$tag" --title "$tag" --notes-file VERSION --target "$GITHUB_SHA"

@@ -1,5 +1,6 @@
-tfmodgen=v0.1.0-rc1
-tfmodgen_commit=4e0ed94
+release=v4.81.0
+tfmodgen=b4a0f45
+tfmodgen_commit=b4a0f45
 provider=registry.terraform.io/hashicorp/azurerm
 provider_version=4.81.0
 schema_digest=859116e80bea8668
