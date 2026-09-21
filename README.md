@@ -22,7 +22,9 @@ module calls. Read `modules/<resource>/variables.tf` for the interface.
 
 ## What a release is
 
-`VERSION` records the tfmodgen tag and commit, the resolved provider
+`VERSION` names the release (the provider version, e.g. `v4.81.0`; a
+regeneration for an already released provider version becomes `-r2`),
+the tfmodgen tag and commit, the provider
 version, and a digest of the provider schema the modules were generated
 from. A pull request from tfmodgen carries a new `VERSION`; merging it is
 the release, and the release workflow tags it. Tags are never moved.
